@@ -3,9 +3,11 @@
 # The Mastermind class represents the game of mastermind
 # and includes data and methods pertinent to gameplay
 class Mastermind
-  def initialize
-    @code = Array.new(4) { rand(6).to_s }
-    @guesses_remaining = 12
+  attr_reader :num_guesses
+
+  def initialize(code = Array.new(4) { rand(6).to_s }, num_guesses = 12)
+    @code = code
+    @num_guesses = num_guesses
   end
 
   def check_code(guess)
@@ -46,9 +48,9 @@ class Mastermind
 end
 
 def main
-  mastermind = Mastermind.new
+  mastermind = Mastermind.new(Array.new(4) { rand(6).to_s }, 6)
 
-  12.times do
+  mastermind.num_guesses.times do
     print "\nEnter your guess >> "
     breaker_guess = gets.chomp.split('')
     keys = mastermind.check_code(breaker_guess)
