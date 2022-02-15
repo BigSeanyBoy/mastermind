@@ -51,22 +51,37 @@ end
 # user; the codebreaker of the user's code.
 class Computer
   def initialize
-    0
+    @code = []
+    @keys = 0
+    @next_number = 0
+    @permutations = []
   end
 
   def guess
-    puts "\nComputer guess: #{@code_set[0]}"
+    puts "\nComputer Guess: #{make_guess.join}"
     print 'Enter number of black keys >>> '
     black_keys = gets.chomp.to_i
     return true if black_keys == 4
 
     print 'Enter number of white keys >>> '
     white_keys = gets.chomp.to_i
-    update_set(black_keys, white_keys)
+    new_keys = black_keys + white_keys - @keys
+    @keys += new_keys
+    @code += Array.new(new_keys, @next_number)
+    @next_number += 1
   end
 
-  def update_set(black_keys, white_keys)
-    @code_set.shuffle!
+  def make_guess
+    if @keys == 4
+      if @permutations.empty?
+        @code.permutation.each do |permutation|
+          @permutations.push(permutation)
+        end
+      end
+      return @permutations.shift
+    end
+    next_number_array = Array.new(4 - @keys, @next_number.to_s)
+    @code + next_number_array
   end
 end
 
@@ -95,12 +110,9 @@ def player_breaker(difficulty)
 end
 
 def player_maker(difficulty)
-  print "\nEnter the code >>> "
-  code = gets.chomp.to_i
-  mastermind = Mastermind.new(code, difficulty)
   computer = Computer.new
 
-  mastermind.num_guesses.times do  
+  difficulty.times do
     return 'Computer Wins...' if computer.guess == true
   end
   'You win!'
