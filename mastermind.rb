@@ -4,10 +4,10 @@
 # and includes data and methods pertinent to gameplay
 class Mastermind
   attr_reader :num_guesses
+  attr_writer :code
 
-  def initialize(code, num_guesses)
+  def initialize(code)
     @code = code
-    @num_guesses = num_guesses
   end
 
   def check_code(guess)
@@ -41,47 +41,53 @@ class Mastermind
     end
     white_keys
   end
-
-  def assign_code(code)
-    @code = code
-  end
 end
 
 # The Computer class represents the opponent of the
 # user; the codebreaker of the user's code.
 class Computer
+  attr_reader :code_set
+
   def initialize
-    @code = []
-    @keys = 0
-    @next_number = 0
-    @permutations = []
+    @board = Mastermind.new(Array.new(4, 0))
+    @code_set = []
+    (0...6).each do |i|
+      (0...6).each do |j|
+        (0...6).each do |k|
+          (0...6).each { |l| @code_set.push("#{i}#{j}#{k}#{l}") }
+        end
+      end
+    end
   end
 
   def guess
-    puts "\nComputer Guess: #{make_guess.join}"
+    guess = @code_set.length == 1296 ? @code_set.slice!(266) : @code_set.shuffle.shift
+    return false if guess.nil?
+
+    @board.code = guess.split('')
+    puts "\nComputer Guess: #{guess}"
+    keys = award_keys
+    return true if keys == true
+
+    update_set(keys[0], keys[1])
+  end
+
+  def award_keys
     print 'Enter number of black keys >>> '
     black_keys = gets.chomp.to_i
     return true if black_keys == 4
-
     print 'Enter number of white keys >>> '
     white_keys = gets.chomp.to_i
-    new_keys = black_keys + white_keys - @keys
-    @keys += new_keys
-    @code += Array.new(new_keys, @next_number)
-    @next_number += 1
+    [black_keys, white_keys]
   end
 
-  def make_guess
-    if @keys == 4
-      if @permutations.empty?
-        @code.permutation.each do |permutation|
-          @permutations.push(permutation)
-        end
-      end
-      return @permutations.shift
+  def update_set(black_keys, white_keys)
+    filtered_set = []
+    @code_set.each do |code|
+      keys = @board.check_code(code.split(''))
+      filtered_set.push(code) if keys[0] == black_keys && keys[1] == white_keys
     end
-    next_number_array = Array.new(4 - @keys, @next_number.to_s)
-    @code + next_number_array
+    @code_set = filtered_set
   end
 end
 
@@ -95,9 +101,9 @@ def pregame_settings
 end
 
 def player_breaker(difficulty)
-  mastermind = Mastermind.new(Array.new(4) { rand(6).to_s }, difficulty)
+  mastermind = Mastermind.new(Array.new(4) { rand(6).to_s })
 
-  mastermind.num_guesses.times do
+  difficulty.times do
     print "\nEnter your guess >> "
     breaker_guess = gets.chomp.split('')
     keys = mastermind.check_code(breaker_guess)
@@ -114,6 +120,7 @@ def player_maker(difficulty)
 
   difficulty.times do
     return 'Computer Wins...' if computer.guess == true
+    return 'You changed the code...' if computer.guess == false
   end
   'You win!'
 end
